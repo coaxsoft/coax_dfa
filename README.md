@@ -38,10 +38,10 @@ Let's review it in details.
 
 ### 1. Feature description
 #### 1.1. Why?
-Describe the business reason for the feature. Why do we need it? What is the business value? What is the business problem we are trying to solve?
+Describe the business reason for the feature. Why do we need it? What is the business value? What is the business problem we are trying to solve? Keep it short, without longreads.
 
 #### 1.2. Goal
-Describe the goal of the feature. What is the expected result? What is the expected outcome? What is the expected impact?
+Describe the goal of the feature. What is the expected result? What is the expected outcome? What is the expected impact? Keep it short, without longreads.
 
 #### 1.3. Challenges / Risks
 Describe the challenges and risks of the feature. What are the possible blockers? What are the possible risks? What are the possible challenges?
@@ -55,6 +55,8 @@ What could be the non-functional requirements?
 - Maintainability
 - Reliability
 - Usability
+No need to describe each of them - only what really makes sense in scope of this feature.
+
 The default assumption is that the feature is not changing the non-functional requirements.
 Do not make it work slower or less secure in general!
 
@@ -82,11 +84,11 @@ Try to give as detailed breakdown as possible. The more detailed the better. Con
 >   - Initiates Flywire script
 >  - Flywire modal needs to be rendered
 
-This description must be valid and understandable for the developer who is going to implement the feature(you dont know who).
+This description must be valid and understandable for the developer who is going to implement the feature (you don't know who).
 
 ### 5. C4 diagrams
 Describe container and/or components. Use [C4 model](https://wiki.chervona-ruta.xyz/books/engineering-project-repository-documentation/page/uml-c4-description) to describe the architecture.
-Describe those levels that make sense for the feature.
+Describe those levels that make sense for the feature. If there are no architectural changes - no diagrams required.
 
 P.S. Attach image of diagrams here. Put `.puml` them in the `.docs` folder.
 
@@ -107,7 +109,7 @@ Describe the database structure changes. Use the following structure:
 - ...
 
 Consider to use [dbdiagram.io](https://dbdiagram.io/home) to describe database structure in text format.
-Avoid "drawing" as much as possible. Use text format instead.
+Avoid "drawing" as much as possible. Use text format instead. If possible, describe required changes exactly in programming language/framework syntax, like migration files etc.
 
 ### 7. API documentation
 
