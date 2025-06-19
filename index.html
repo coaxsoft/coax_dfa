@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guide: Design First Approach</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Calm Neutrals (Shades of stone, gray, with a soft teal accent). -->
+    <!-- Application Structure Plan: The SPA features a prominent, full-width introductory section permanently visible at the top. The first part of this section is now split into two columns: the main introductory text on the left and a visual feature matrix/icon-based display for DFA benefits on the right. This enhances the initial presentation by integrating the visual directly with its context. The "Simplified Overview" is now presented visually as a series of connected circles, each representing a step, providing a clearer flow, and this section now spans the full width of the content area. Below this, the core two-column layout consists of a sticky navigation sidebar on the left listing the 8 DFA steps (labeled "DFA Template"), with reduced padding, and a main content area on the right displaying one step at a time, navigable via clicks or centered floating "Previous" and "Next" buttons. This structure balances persistent context, focused step-by-step exploration, and intuitive navigation. -->
+    <!-- Visualization & Content Choices:
+    - Report Info: Main introduction text & overall concept. -> Goal: Provide an engaging, always-present overview and visually represent benefits upfront. -> Presentation Method: Full-width section with detailed explanation on the left and a custom-designed visual matrix (not a chart) on the right within a flex container. -> Interaction: Static, serves as a persistent anchor. -> Justification: Integrates the core explanation with a visual summary of benefits directly, improving comprehension and initial engagement, offering a unique, non-chart visual style.
+    - Report Info: DFA Benefits. -> Goal: Illustrate the importance and impact of each benefit. -> Presentation Method: A custom-designed visual matrix of icon-based cards, displayed side-by-side with the main introductory text within a responsive container. -> Interaction: Purely visual, no interactive data points. -> Justification: Provides a clear, digestible visual summary of key benefits using icons and direct text, moving away from conventional charts as requested.
+    - Report Info: Simplified Overview of the Design First Approach. -> Goal: Present the process steps in an intuitive, flow-like manner with wider text descriptions and full-width layout. -> Presentation Method: A responsive series of connected circles with text, illustrating a clear flow for the process. Connectors adapt from vertical on small screens to horizontal on larger ones. The container itself now stretches full width. -> Interaction: Static, visual flow. -> Justification: Addresses the user's request for a "connected circles" visualization, creating a more dynamic and engaging representation of the workflow, and now occupies full available width for better visual impact and readability.
+    - Report Info: The 8 steps of the "DFA - COAX way". -> Goal: Guide the user through the process. -> Presentation Method: A single, visible section in the main content area (initially 'Step 1'), with hidden sections for other steps, organized by a transparent sticky navigation bar with reduced padding. -> Interaction: Click-to-activate navigation in the sidebar, and centered "Previous/Next" floating buttons for linear progression. -> Justification: This transforms the guide into a focused, step-by-step experience, preventing information overload and enhancing navigation flow, while optimizing sidebar space.
+    - Report Info: Example Mermaid syntax. -> Goal: Show the user what to write. -> Presentation Method: A styled HTML `<pre><code>` block. -> Justification: Directly presents the example code as text, which is what the source provides.
+    - Report Info: C4 Diagram placeholder. -> Goal: Illustrate where diagrams would go. -> Presentation Method: Textual placeholder description. -> Justification: Provides context for a section that would typically contain complex visuals, without using actual SVG, Mermaid, or image files.
+    - Library/Method: Vanilla JavaScript for interactivity, Tailwind CSS for styling. Chart.js is removed. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        .nav-link.active {
+            background-color: #E0F2F1;
+            color: #00796B;
+            font-weight: 500;
+        }
+        .prose-custom {
+            color: #374151;
+        }
+        .prose-custom h1, .prose-custom h2, .prose-custom h3, .prose-custom h4 {
+            color: #111827;
+        }
+        .prose-custom blockquote {
+            border-left-color: #009688;
+            background-color: #F7FAFC;
+        }
+        .floating-buttons {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 1000;
+        }
+        .floating-button {
+            background-color: #009688;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .floating-button:hover {
+            background-color: #00796B;
+            transform: translateY(-2px);
+        }
+        .floating-button:disabled {
+            background-color: #9CA3AF;
+            cursor: not-allowed;
+            transform: none;
+        }
+        /* Custom styles for the visual benefits matrix */
+        .benefit-card {
+            background-color: #f0fdf4; /* A very light green */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1fae5; /* A light green border */
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .benefit-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: #047857; /* Darker green */
+        }
+        .benefit-card .title {
+            font-weight: 600;
+            color: #065f46; /* Even darker green */
+            margin-bottom: 0.25rem;
+        }
+        .benefit-card .description {
+            font-size: 0.875rem;
+            color: #10b981; /* Default green */
+        }
+
+        /* Styles for the connected circles flow */
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem; /* Space between items in column layout */
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            width: 100%; /* Make flow container full width */
+        }
+
+        .flow-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 220px; /* Increased max-width for wider text */
+        }
+
+        .flow-circle {
+            width: 80px; /* Size of the circle */
+            height: 80px;
+            background-color: #00796B; /* Teal color for circles */
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 10; /* Ensure circles are above lines */
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+
+        .flow-connector {
+            background-color: #4DB6AC; /* Lighter teal for connectors */
+            width: 4px; /* Vertical line width */
+            height: 40px; /* Vertical line height */
+            flex-shrink: 0;
+        }
+
+        @media (min-width: 768px) {
+            .flow-container {
+                flex-direction: row;
+                gap: 0; /* Remove gap in row layout; connectors handle spacing */
+                justify-content: space-around; /* Distribute items across full width */
+            }
+            .flow-step {
+                flex-direction: column;
+                justify-content: flex-start;
+                padding: 0 0.5rem; /* Reduced padding to fit more content in wider layout */
+                max-width: 200px; /* Keep individual step max-width reasonable for horizontal flow */
+            }
+            .flow-connector {
+                width: 50px; /* Horizontal line width */
+                height: 4px; /* Horizontal line height */
+            }
+            /* Adjust connector width for larger screens to ensure proper spacing in full width */
+            @media (min-width: 1024px) {
+                .flow-connector {
+                    width: 80px; /* Further increase connector width for larger screens */
+                }
+            }
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+<div class="container mx-auto max-w-7xl p-4 md:p-8">
+    <header class="text-center mb-8">
+        <h1 class="text-4xl md:text-5xl font-bold text-teal-800 mb-2">Design First Approach</h1>
+        <p class="text-lg text-stone-600 mb-6">An interactive guide to building robust and maintainable software.</p>
+    </header>
+
+    <section id="intro-full" class="bg-white p-8 rounded-lg shadow-sm prose-custom max-w-none mb-12">
+        <h2 class="text-2xl font-bold border-b pb-2 mb-4">What is the Design First Approach?</h2>
+
+        <div class="flex flex-col lg:flex-row items-start justify-center lg:justify-start gap-8">
+            <div class="lg:w-1/2">
+                <p>Design first approach in software development is a methodology that emphasizes the importance of designing a software system before writing any code. This involves creating a comprehensive plan that outlines the system's architecture, components, and interfaces. The goal of the design first approach is to create a well-thought-out system that meets the needs of the users and is easy to maintain and extend.</p>
+                <p class="p-4 my-4">
+                    There are several benefits to using a design first approach, including:
+                </p>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li><strong>Reduced Rework:</strong> By carefully planning the system before writing any code, developers can avoid having to rework their code later on. This can save a significant amount of time and money.</li>
+                    <li><strong>Improved Quality:</strong> A well-designed system is more likely to be high-quality and bug-free. This is because the design process forces developers to think through all of the possible scenarios and how the system should behave in each case.</li>
+                    <li><strong>Increased Maintainability:</strong> A well-designed system is easier to maintain and extend. This is because the design documents provide a clear roadmap for how the system works and how it can be modified.</li>
+                    <li><strong>Improved Communication:</strong> The design process helps to improve communication between different stakeholders, such as developers, product managers, and users. This is because everyone is working towards a common goal, which is to create a system that meets the needs of the users.</li>
+                </ul>
+            </div>
+            <div class="lg:w-1/2 flex flex-col justify-center items-center p-4">
+                <h3 class="text-xl font-bold mb-4 text-stone-700 text-center">Key Benefits of DFA</h3>
+                <div class="grid grid-cols-2 gap-4 w-full">
+                    <div class="benefit-card">
+                        <span class="icon">🔄</span>
+                        <div class="title">Reduced Rework</div>
+                        <div class="description">Minimize costly changes later.</div>
+                    </div>
+                    <div class="benefit-card">
+                        <span class="icon">✨</span>
+                        <div class="title">Improved Quality</div>
+                        <div class="description">Higher standards, fewer bugs.</div>
+                    </div>
+                    <div class="benefit-card">
+                        <span class="icon">🔧</span>
+                        <div class="title">Increased Maintainability</div>
+                        <div class="description">Easier updates and extensions.</div>
+                    </div>
+                    <div class="benefit-card">
+                        <span class="icon">🗣️</span>
+                        <div class="title">Improved Communication</div>
+                        <div class="description">Clearer alignment among teams.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="mt-4 w-full">The design first approach is often used in conjunction with other software development methodologies, such as agile development. In agile development, the design process is iterative and incremental, meaning that the design is updated as the system is developed. This allows the team to be flexible and respond to changes in requirements.</p>
+
+        <h3 class="text-xl font-bold mt-8 mb-4">Simplified Overview of the Design First Approach:</h3>
+        <p class="text-stone-600 mb-6">A high-level process flow of the DFA methodology:</p>
+        <div class="flow-container">
+            <div class="flow-step">
+                <div class="flow-circle">1</div>
+                <h4 class="text-lg font-semibold text-teal-800 mt-2">Gather requirements & define boundaries</h4>
+                <p class="text-stone-700 text-sm mt-1">Understand business goals, user needs, and establish the scope and initial parameters of the project.</p>
+            </div>
+            <div class="flow-connector md:w-[60px] lg:w-[80px]"></div> <!-- Adjusted width for larger screens -->
+            <div class="flow-step">
+                <div class="flow-circle">2</div>
+                <h4 class="text-lg font-semibold text-teal-800 mt-2">General feature design and workflow</h4>
+                <p class="text-stone-700 text-sm mt-1">Develop high-level architectural designs and detailed user workflows, outlining interactions and system behavior.</p>
+            </div>
+            <div class="flow-connector md:w-[60px] lg:w-[80px]"></div> <!-- Adjusted width for larger screens -->
+            <div class="flow-step">
+                <div class="flow-circle">3</div>
+                <h4 class="text-lg font-semibold text-teal-800 mt-2">Detailed technical design</h4>
+                <p class="text-stone-700 text-sm mt-1">Create granular technical specifications for each component, including internal structure, data models, and module interactions.</p>
+            </div>
+            <div class="flow-connector md:w-[60px] lg:w-[80px]"></div> <!-- Adjusted width for larger screens -->
+            <div class="flow-step">
+                <div class="flow-circle">4</div>
+                <h4 class="text-lg font-semibold text-teal-800 mt-2">Review and Validation</h4>
+                <p class="text-stone-700 text-sm mt-1">Conduct thorough reviews and validations of designs with stakeholders to ensure alignment and correctness before implementation.</p>
+            </div>
+        </div>
+        <p class="mt-4">The design first approach is a valuable tool for software developers. By carefully planning the system before writing any code, developers can save time and money, improve the quality of the system, and make it easier to maintain and extend.</p>
+    </section>
+
+
+    <div class="flex flex-col md:flex-row gap-8">
+
+        <aside class="md:w-1/4 lg:w-1/5">
+            <nav id="navigation" class="sticky top-8 p-4 rounded-lg">
+                <h3 class="font-bold text-lg mb-4 text-stone-700">DFA Template</h3>
+                <ul class="space-y-1"> <!-- Reduced space-y for less vertical padding -->
+                    <li><a href="#step1" class="nav-link block px-2 py-1 rounded-md transition-colors duration-200 hover:bg-teal-50 hover:text-teal-700" data-target-step="step1">📝 1. Feature Description</a></li>
+                    <li><a href="#step2" class="nav-link block px-2 py-1 rounded-md transition-colors duration-200 hover:bg-teal-50 hover:text-teal-700" data-target-step="step2">⚙️ 2. Non-Functional Requirements</a></li>
+                    <li><a href="#step3" class="nav-link block px-2 py-1 rounded-md transition-colors duration-200 hover:bg-teal-50 hover:text-teal-700" data-target-step="step3">➡️ 3. Sequence Diagram</a></li>
+                    <li><a href="#step4" class="nav-link block px-2 py-1 rounded-md transition-colors duration-200 hover:bg-teal-50 hover:text-teal-700" data-target-step="step4">✨ 4. Actions</a></li>
+                    <li><a href="#step5" class="nav-link block px-2 py-1 rounded-md transition-colors duration-200 hover:bg-teal-50 hover:text-teal-700" data-target-step="step5">🏗️ 5. C4 Diagrams</a></li>
+                    <li><a href="#step6" class="nav-link block px-2 py-1 rounded-md transition-colors duration-200 hover:bg-teal-50 hover:text-teal-700" data-target-step="step6">🗄️ 6. Database Structure</a></li>
+                    <li><a href="#step7" class="nav-link block px-2 py-1 rounded-md transition-colors duration-200 hover:bg-teal-50 hover:text-teal-700" data-target-step="step7">🔗 7. API Documentation</a></li>
+                    <li><a href="#step8" class="nav-link block px-2 py-1 rounded-md transition-colors duration-200 hover:bg-teal-50 hover:text-teal-700" data-target-step="step8">✅ 8. Test Coverage</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main id="main-content-area" class="md:w-3/4 lg:w-4/5">
+            <section id="step1" class="bg-white p-8 rounded-lg shadow-sm prose-custom max-w-none hidden">
+                <h2 class="text-2xl font-bold border-b pb-2 mb-4">📝 1. Feature Description</h2>
+                <p>The first step is to clearly and concisely define the feature. This involves outlining its business purpose, its ultimate goal, and any potential challenges or risks associated with its implementation. A solid feature description sets the stage for all subsequent design and development work.</p>
+                <div class="mt-6 space-y-4">
+                    <h4 class="font-bold text-lg">1.1. Why?</h4>
+                    <p>Describe the business reason for the feature. Why do we need it? What is the business value? What is the business problem we are trying to solve? Keep it short, without longreads.</p>
+                    <h4 class="font-bold text-lg">1.2. Goal</h4>
+                    <p>Describe the goal of the feature. What is the expected result? What is the expected outcome? What is the expected impact? Keep it short, without longreads.</p>
+                    <h4 class="font-bold text-lg">1.3. Challenges / Risks</h4>
+                    <p>Describe the challenges and risks of the feature. What are the possible blockers? What are the possible risks? What are the possible challenges?</p>
+                </div>
+            </section>
+
+            <section id="step2" class="bg-white p-8 rounded-lg shadow-sm prose-custom max-w-none hidden">
+                <h2 class="text-2xl font-bold border-b pb-2 mb-4">⚙️ 2. Non-Functional Requirements</h2>
+                <p>This section defines the technical quality attributes of the system that are not covered by business requirements. These requirements ensure the system operates effectively. You only need to specify the ones relevant to the feature; the default assumption is that existing NFRs are not negatively impacted.</p>
+                <ul class="list-disc pl-5 space-y-2 mt-4">
+                    <li><strong>Performance:</strong> How fast must the system respond?</li>
+                    <li><strong>Security:</strong> What are the security constraints and requirements?</li>
+                    <li><strong>Scalability:</strong> How should the system handle growth in users or data?</li>
+                    <li><strong>Maintainability:</strong> How easy should it be to update or fix the system?</li>
+                    <li><strong>Reliability:</strong> How often can the system fail? What is the expected uptime?</li>
+                    <li><strong>Usability:</strong> How easy should the system be for the target users?</li>
+                </ul>
+            </section>
+
+            <section id="step3" class="bg-white p-8 rounded-lg shadow-sm prose-custom max-w-none hidden">
+                <h2 class="text-2xl font-bold border-b pb-2 mb-4">➡️ 3. Sequence Diagram</h2>
+                <p>A sequence diagram visually represents the interactions between different components or systems over time. It's an excellent tool for detailing the step-by-step logic of a process, such as an API call or a user interaction flow. Use Mermaid syntax to create as many diagrams as needed to describe all relevant flows.</p>
+                <p class="mt-4">Example using Mermaid syntax:</p>
+                <pre class="bg-stone-100 p-4 rounded-md mt-2 text-sm overflow-x-auto"><code class="language-mermaid">sequenceDiagram
+    Alice->>John: Hello John, how are you?
+    John-->>Alice: Great!
+    Alice-)John: See you later!</code></pre>
+            </section>
+
+            <section id="step4" class="bg-white p-8 rounded-lg shadow-sm prose-custom max-w-none hidden">
+                <h2 class="text-2xl font-bold border-b pb-2 mb-4">✨ 4. Actions</h2>
+                <p>This section provides a detailed, technical breakdown of the work required. List all the specific code units (classes, modules, functions, etc.) that need to be created or modified. The description should be clear enough for any developer to understand and implement the feature.</p>
+                <p class="mt-4">For example:</p>
+                <blockquote class="border-l-4 p-4 my-4">
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li>Create `MagicLinks::InvoicesController` - for payment links</li>
+                        <li>Create `MagicLinks::Organizations::UsersController` - for organization users</li>
+                        <li>Update URLs</li>
+                        <li>In `MagicLinks::PaymentsController`:
+                            <ul class="list-circle pl-5 mt-2">
+                                <li>Create page which generates payment link for the invoice</li>
+                                <li>Initiate Flywire script</li>
+                                <li>Flywire modal needs to be rendered</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </blockquote>
+            </section>
+
+            <section id="step5" class="bg-white p-8 rounded-lg shadow-sm prose-custom max-w-none hidden">
+                <h2 class="text-2xl font-bold border-b pb-2 mb-4">🏗️ 5. C4 Diagrams</h2>
+                <p>If the feature involves architectural changes, use the C4 model to describe them. The C4 model helps visualize software architecture at different levels of detail (Context, Containers, Components, Code). Only create diagrams for the levels that are relevant to the feature. If there are no architectural changes, this section can be skipped.</p>
+                <div class="mt-4 p-6 bg-stone-100 rounded-lg text-center">
+                    <p class="text-stone-600 mt-4">Attach images of your C4 diagrams here and store the source `.puml` files in your project's `.docs` folder.</p>
+                </div>
+            </section>
+
+            <section id="step6" class="bg-white p-8 rounded-lg shadow-sm prose-custom max-w-none hidden">
+                <h2 class="text-2xl font-bold border-b pb-2 mb-4">🗄️ 6. Database Structure</h2>
+                <p>Detail any changes to the database schema. This includes new tables or columns, modifications to existing ones, or removals. Using a text-based format like the one provided by dbdiagram.io is recommended for clarity and version control.</p>
+                <div class="grid md:grid-cols-3 gap-4 mt-6">
+                    <div>
+                        <h4 class="font-bold text-lg">New</h4>
+                        <ul class="list-disc pl-5 mt-2"><li>add `my_new_column` to `my_table`</li></ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-lg">Changed</h4>
+                        <ul class="list-disc pl-5 mt-2"><li>rename `my_old_column` to `my_new_column`</li></ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-lg">Removed</h4>
+                        <ul class="list-disc pl-5 mt-2"><li>remove `my_old_column` from `my_table`</li></ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="step7" class="bg-white p-8 rounded-lg shadow-sm prose-custom max-w-none hidden">
+                <h2 class="text-2xl font-bold border-b pb-2 mb-4">🔗 7. API Documentation</h2>
+                <p>Document all changes to the application's API endpoints. Clearly specify any new endpoints, changes to existing ones (like a new method or URL), and any endpoints that will be removed.</p>
+                <div class="grid md:grid-cols-3 gap-4 mt-6">
+                    <div>
+                        <h4 class="font-bold text-lg">New</h4>
+                        <ul class="list-disc pl-5 mt-2"><li>`GET /my_resource/:id`</li></ul>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-lg">Changed</h4>
+                        <ul class="list-disc pl-5 mt-2"><li>`PATCH /users/:id/update` to `PATCH /users/:id`</li></ul>
+                    </div>
+                    <div>
+                        <h4 class="list-disc pl-5 mt-2"><li>`DELETE /posts/:id`</li></ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="step8" class="bg-white p-8 rounded-lg shadow-sm prose-custom max-w-none hidden">
+                <h2 class="text-2xl font-bold border-b pb-2 mb-4">✅ 8. Test Coverage Requirements</h2>
+                <p>Define the testing requirements for the feature to ensure its quality and stability. By default, any new feature should not decrease the existing test coverage and must include comprehensive tests for all new API endpoints.</p>
+                <ul class="list-disc pl-5 space-y-2 mt-4">
+                    <li><strong>Do NOT reduce overall test coverage.</strong></li>
+                    <li><strong>100% of new API endpoints</strong> must be covered by tests.</li>
+                </ul>
+            </section>
+
+        </main>
+    </div>
+
+    <div class="floating-buttons">
+        <button id="prevBtn" class="floating-button">
+            &#9664; Previous
+        </button>
+        <button id="nextBtn" class="floating-button">
+            Next &#9654;
+        </button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const stepSections = Array.from(document.querySelectorAll('main section'));
+        const navLinks = Array.from(document.querySelectorAll('#navigation .nav-link'));
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const mainContentArea = document.getElementById('main-content-area');
+
+        const allContentIds = stepSections.map(s => s.id);
+        let currentStepIndex = 0;
+
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentStepIndex === 0;
+            nextBtn.disabled = currentStepIndex === allContentIds.length - 1;
+        }
+
+        function showStep(index) {
+            stepSections.forEach(section => {
+                section.classList.add('hidden');
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+            });
+
+            currentStepIndex = index;
+
+            const targetId = allContentIds[currentStepIndex];
+            const targetElement = document.getElementById(targetId);
+            const correspondingNavLink = document.querySelector(`a[data-target-step="${targetId}"]`);
+
+            if (targetElement) {
+                targetElement.classList.remove('hidden');
+                mainContentArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            if (correspondingNavLink) {
+                correspondingNavLink.classList.add('active');
+            }
+            updateNavigationButtons();
+        }
+
+        showStep(0);
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetStepId = e.currentTarget.dataset.targetStep;
+                const index = allContentIds.indexOf(targetStepId);
+                if (index !== -1) {
+                    showStep(index);
+                }
+            });
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentStepIndex > 0) {
+                showStep(currentStepIndex - 1);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentStepIndex < allContentIds.length - 1) {
+                showStep(currentStepIndex + 1);
+            }
+        });
+    });
+</script>
+</body>
+</html>
